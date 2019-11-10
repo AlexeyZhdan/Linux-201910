@@ -10,7 +10,8 @@
 
 в секции *:disks* добавляем следующие строки:
 
-```    :sata5 => {
+```bash
+   :sata5 => {
           :dfile => home + '/VirtualBox/disks/sata5.vdi',
           :size => 250, # Megabytes
           :port => 5
@@ -35,7 +36,8 @@
 подключивсшись к консоли виртуальной машины проверим что диски созданы и подключены для этого набираем  команду ***sudo lshw -short | grep disk***
 получаем следующий результат:
 
-```[vagrant@otuslinux ~]$ sudo lshw -short | grep disk
+```bash
+[vagrant@otuslinux ~]$ sudo lshw -short | grep disk
 /0/100/1.1/0.0.0    /dev/sda   disk        42GB VBOX HARDDISK
 /0/100/d/0          /dev/sdb   disk        262MB VBOX HARDDISK
 /0/100/d/1          /dev/sdc   disk        262MB VBOX HARDDISK
@@ -48,7 +50,8 @@
 
 так же можно проверить выполнив команду ***sudo fdisk -l*** получим следующий результат:
 
-```[vagrant@otuslinux ~]$ sudo fdisk -l
+```bash
+[vagrant@otuslinux ~]$ sudo fdisk -l
 
 Disk /dev/sdc: 262 MB, 262144000 bytes, 512000 sectors
 Units = sectors of 1 * 512 = 512 bytes
@@ -108,7 +111,8 @@ I/O size (minimum/optimal): 512 bytes / 512 bytes
 
 Результат команды:
 
-```[vagrant@otuslinux ~]$ sudo mdadm --zero-superblock --force /dev/sd{b,c,d,e,f,g,h}
+```bash
+[vagrant@otuslinux ~]$ sudo mdadm --zero-superblock --force /dev/sd{b,c,d,e,f,g,h}
 mdadm: Unrecognised md component device - /dev/sdb
 mdadm: Unrecognised md component device - /dev/sdc
 mdadm: Unrecognised md component device - /dev/sdd
@@ -120,7 +124,8 @@ mdadm: Unrecognised md component device - /dev/sdh
 
 создаем массив RAID 1:
 
-```[vagrant@otuslinux ~]$ sudo mdadm --create --verbose /dev/md0 -l 1 -n 2 /dev/sd{b,c}
+```bash
+[vagrant@otuslinux ~]$ sudo mdadm --create --verbose /dev/md0 -l 1 -n 2 /dev/sd{b,c}
 mdadm: Note: this array has metadata at the start and
     may not be suitable as a boot device.  If you plan to
     store '/boot' on this device please ensure that
@@ -134,7 +139,8 @@ mdadm: array /dev/md0 started.
 
 затем создаем массив RAID 6:
 
-```[vagrant@otuslinux ~]$ sudo mdadm --create --verbose /dev/md1 -l 6 -n 5 /dev/sd{d,e,f,g,h}
+```bash
+[vagrant@otuslinux ~]$ sudo mdadm --create --verbose /dev/md1 -l 6 -n 5 /dev/sd{d,e,f,g,h}
 mdadm: layout defaults to left-symmetric
 mdadm: layout defaults to left-symmetric
 mdadm: chunk size defaults to 512K
@@ -145,7 +151,8 @@ mdadm: array /dev/md1 started.
 
 Проверяем что наши RAID-ы нормально собрались. Для этого запускаем команду ***cat /proc/mdstat***. Результат:
 
-``` [vagrant@otuslinux ~]$ cat /proc/mdstat
+```bash
+ [vagrant@otuslinux ~]$ cat /proc/mdstat
 Personalities : [raid1] [raid6] [raid5] [raid4]
 md1 : active raid6 sdh[4] sdg[3] sdf[2] sde[1] sdd[0]
       761856 blocks super 1.2 level 6, 512k chunk, algorithm 2 [5/5] [UUUUU]
@@ -156,7 +163,8 @@ md0 : active raid1 sdc[1] sdb[0]
 
 также работоспособность RAID-ов можно проверить командой ***mdadm -D /dev/mdN*** результаты вывода команды:
 
-```[vagrant@otuslinux ~]$ sudo mdadm -D /dev/md0
+```bash
+[vagrant@otuslinux ~]$ sudo mdadm -D /dev/md0
 /dev/md0:
            Version : 1.2
      Creation Time : Sun Nov 10 10:12:51 2019
@@ -223,7 +231,8 @@ Consistency Policy : resync
 Для начала убеждаемся что информация верна введя команду ***mdadm --detail --scan --verbose***
 получаем следующий результат:
 
-```[vagrant@otuslinux ~]$ sudo mdadm --detail --scan --verbose
+```bash
+[vagrant@otuslinux ~]$ sudo mdadm --detail --scan --verbose
 ARRAY /dev/md0 level=raid1 num-devices=2 metadata=1.2 name=otuslinux:0 UUID=f57177ee:f25b4feb:61bcdab1:8dc69618
    devices=/dev/sdb,/dev/sdc
 ARRAY /dev/md1 level=raid6 num-devices=5 metadata=1.2 name=otuslinux:1 UUID=397adee8:66045e00:d7eb1126:d641cd80
@@ -232,7 +241,8 @@ ARRAY /dev/md1 level=raid6 num-devices=5 metadata=1.2 name=otuslinux:1 UUID=397a
 
 теперь создаем файл **mdadm.conf**
 
-```[vagrant@otuslinux etc]$ sudo echo "DEVICE partitions" > /etc/mdadm/mdadm.conf
+```bash
+[vagrant@otuslinux etc]$ sudo echo "DEVICE partitions" > /etc/mdadm/mdadm.conf
 [vagrant@otuslinux etc]$ sudo mdadm --detail --scan --verbose | awk '/ARRAY/ {print}' >> /etc/mdadm/mdadm.conf
 ```
 
@@ -240,13 +250,15 @@ ARRAY /dev/md1 level=raid6 num-devices=5 metadata=1.2 name=otuslinux:1 UUID=397a
 
 Искусственно "зафейливаем" одно из блочных устройств в RAID 6
 
-```[vagrant@otuslinux mdadm]$ sudo mdadm /dev/md1 --fail /dev/sdf
+```bash
+[vagrant@otuslinux mdadm]$ sudo mdadm /dev/md1 --fail /dev/sdf
 mdadm: set /dev/sdf faulty in /dev/md1
 ```
 
 Проверяем что один из логических дисков RAID 6 в состоянии ***Failed***
 
-```[vagrant@otuslinux mdadm]$ cat /proc/mdstat
+```bash
+[vagrant@otuslinux mdadm]$ cat /proc/mdstat
 Personalities : [raid1] [raid6] [raid5] [raid4]
 md1 : active raid6 sdh[4] sdg[3] sdf[2](F) sde[1] sdd[0]
       761856 blocks super 1.2 level 6, 512k chunk, algorithm 2 [5/4] [UU_UU]
@@ -254,7 +266,8 @@ md1 : active raid6 sdh[4] sdg[3] sdf[2](F) sde[1] sdd[0]
 
 другой способ проверить
 
-```[vagrant@otuslinux mdadm]$ sudo mdadm -D /dev/md1
+```bash
+[vagrant@otuslinux mdadm]$ sudo mdadm -D /dev/md1
 /dev/md1:
            Version : 1.2
      Creation Time : Sun Nov 10 10:13:47 2019
@@ -293,19 +306,22 @@ Consistency Policy : resync
 
 Удаляем "сломанный" диск из массива
 
-```[vagrant@otuslinux mdadm]$ sudo mdadm /dev/md1 --remove /dev/sdf
+```bash
+[vagrant@otuslinux mdadm]$ sudo mdadm /dev/md1 --remove /dev/sdf
 mdadm: hot removed /dev/sdf from /dev/md1
 ```
 
 Добавляем в массив новый диск
 
-```[vagrant@otuslinux mdadm]$ sudo mdadm /dev/md1 --add /dev/sdf
+```bash
+[vagrant@otuslinux mdadm]$ sudo mdadm /dev/md1 --add /dev/sdf
 mdadm: added /dev/sdf
 ```
 
 проверяем что RAID пересобрался
 
-```[vagrant@otuslinux mdadm]$ cat /proc/mdstat
+```bash
+[vagrant@otuslinux mdadm]$ cat /proc/mdstat
 Personalities : [raid1] [raid6] [raid5] [raid4]
 md1 : active raid6 sdf[5] sdh[4] sdg[3] sde[1] sdd[0]
       761856 blocks super 1.2 level 6, 512k chunk, algorithm 2 [5/5] [UUUUU]
@@ -331,7 +347,8 @@ md1 : active raid6 sdf[5] sdh[4] sdg[3] sde[1] sdd[0]
 
 Результат выподнения:
 
-```[vagrant@otuslinux mdadm]$ sudo parted /dev/md1 mkpart primary ext4 0% 20%
+```bash
+[vagrant@otuslinux mdadm]$ sudo parted /dev/md1 mkpart primary ext4 0% 20%
 Information: You may need to update /etc/fstab.
 
 [vagrant@otuslinux mdadm]$ sudo parted /dev/md1 mkpart primary ext4 20% 40%
@@ -354,7 +371,8 @@ Information: You may need to update /etc/fstab.
 
 результат выполнения команды
 
-```[vagrant@otuslinux mdadm]$ for i in $(seq 1 5); do sudo mkfs.ext4 /dev/md1p$i; done
+```bash
+[vagrant@otuslinux mdadm]$ for i in $(seq 1 5); do sudo mkfs.ext4 /dev/md1p$i; done
 mke2fs 1.42.9 (28-Dec-2013)
 Filesystem label=
 OS type: Linux
@@ -471,6 +489,8 @@ Writing superblocks and filesystem accounting information: done
 
 Результат:
 
-```[vagrant@otuslinux mdadm]$ sudo mkdir -p /raid/part{1,2,3,4,5}
+```bash
+[vagrant@otuslinux mdadm]$ sudo mkdir -p /raid/part{1,2,3,4,5}
 [vagrant@otuslinux mdadm]$ for i in $(seq 1 5); do sudo mount /dev/md1p$i /raid/part$i; done
-[vagrant@otuslinux mdadm]$ ```
+[vagrant@otuslinux mdadm]$
+```
