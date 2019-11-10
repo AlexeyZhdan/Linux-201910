@@ -208,7 +208,7 @@ Consistency Policy : resync
        3       8       96        3      active sync   /dev/sdg
        4       8      112        4      active sync   /dev/sdh '''
 
-##Создание конфигурационного файла mdadm.conf
+## Создание конфигурационного файла mdadm.conf
 
 Для начала убеждаемся что информация верна введя команду ***mdadm --detail --scan --verbose***
 получаем следующий результат:
