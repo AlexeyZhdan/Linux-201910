@@ -88,6 +88,8 @@ Vagrant.configure("2") do |config|
         # Create RAID 6
         mdadm --create --verbose /dev/md1 -l 6 -n 5 /dev/sd{d,e,f,g,h}
         # Create mdadm.config
+        mkdir /etc/mdadm
+        chmod 757 /etc/mdadm
         echo "DEVICE partitions" > /etc/mdadm/mdadm.conf
         mdadm --detail --scan --verbose | awk '/ARRAY/ {print}' >> /etc/mdadm/mdadm.conf
         # Create GPT on RAID 6
