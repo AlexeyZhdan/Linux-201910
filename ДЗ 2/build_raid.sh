@@ -3,7 +3,7 @@
 # Prepare zero superblock
 mdadm --zero-superblock --force /dev/sd{b,c,d,e,f,g,h}
 # Create RAID 1
-mdadm --create --verbose /dev/md0 -l 1 -n 2 /dev/sd{b,c} -y
+mdadm --create --verbose /dev/md0 -l 1 -n 2 /dev/sd{b,c} 
 # Create RAID 6
 mdadm --create --verbose /dev/md1 -l 6 -n 5 /dev/sd{d,e,f,g,h}
 # Create mdadm.config
