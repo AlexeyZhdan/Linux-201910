@@ -415,3 +415,137 @@ Writing superblocks and filesystem accounting information: done
 Перезагружаемся и проверяем
 
 ```bash
+NAME                     MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda                        8:0    0   40G  0 disk
+├─sda1                     8:1    0    1M  0 part
+├─sda2                     8:2    0    1G  0 part /boot
+└─sda3                     8:3    0   39G  0 part
+  ├─VolGroup00-LogVol00  253:0    0    8G  0 lvm  /
+  └─VolGroup00-LogVol01  253:1    0  1.5G  0 lvm  [SWAP]
+sdb                        8:16   0   10G  0 disk
+└─vg_root-lv_root        253:7    0   10G  0 lvm
+sdc                        8:32   0    2G  0 disk
+├─vg_var-lv_var_rmeta_0  253:2    0    4M  0 lvm
+│ └─vg_var-lv_var        253:6    0  952M  0 lvm  /var
+└─vg_var-lv_var_rimage_0 253:3    0  952M  0 lvm
+  └─vg_var-lv_var        253:6    0  952M  0 lvm  /var
+sdd                        8:48   0    1G  0 disk
+├─vg_var-lv_var_rmeta_1  253:4    0    4M  0 lvm
+│ └─vg_var-lv_var        253:6    0  952M  0 lvm  /var
+└─vg_var-lv_var_rimage_1 253:5    0  952M  0 lvm
+  └─vg_var-lv_var        253:6    0  952M  0 lvm  /var
+sde                        8:64   0    1G  0 disk
+```
+
+Удаляем временную VG использованную для переноса корневого раздела
+
+```bash
+[root@lvm ~]# lvremove /dev/vg_root/lv_root
+Do you really want to remove active logical volume vg_root/lv_root? [y/n]: y
+  Logical volume "lv_root" successfully removed
+[root@lvm ~]# vgremove /dev/vg_root
+  Volume group "vg_root" successfully removed
+[root@lvm ~]# pvremove /dev/sdb
+  Labels on physical volume "/dev/sdb" successfully wiped.
+```
+проверяем
+
+```bash
+[root@lvm ~]# lsblk
+NAME                     MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda                        8:0    0   40G  0 disk
+├─sda1                     8:1    0    1M  0 part
+├─sda2                     8:2    0    1G  0 part /boot
+└─sda3                     8:3    0   39G  0 part
+  ├─VolGroup00-LogVol00  253:0    0    8G  0 lvm  /
+  └─VolGroup00-LogVol01  253:1    0  1.5G  0 lvm  [SWAP]
+sdb                        8:16   0   10G  0 disk
+sdc                        8:32   0    2G  0 disk
+├─vg_var-lv_var_rmeta_0  253:2    0    4M  0 lvm
+│ └─vg_var-lv_var        253:6    0  952M  0 lvm  /var
+└─vg_var-lv_var_rimage_0 253:3    0  952M  0 lvm
+  └─vg_var-lv_var        253:6    0  952M  0 lvm  /var
+sdd                        8:48   0    1G  0 disk
+├─vg_var-lv_var_rmeta_1  253:4    0    4M  0 lvm
+│ └─vg_var-lv_var        253:6    0  952M  0 lvm  /var
+└─vg_var-lv_var_rimage_1 253:5    0  952M  0 lvm
+  └─vg_var-lv_var        253:6    0  952M  0 lvm  /var
+sde                        8:64   0    1G  0 disk
+```
+
+Выделяем том под каталог **/home** так же как делали с томом под **/var**
+
+```bash
+[root@lvm ~]# lvcreate -n LogVol_Home -L 2G /dev/VolGroup00
+  Logical volume "LogVol_Home" created.
+[root@lvm ~]# mkfs.xfs /dev/VolGroup00/LogVol_Home
+meta-data=/dev/VolGroup00/LogVol_Home isize=512    agcount=4, agsize=131072 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=524288, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=2560, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@lvm ~]# mount /dev/VolGroup00/LogVol_Home /mnt
+[root@lvm ~]# cp -aR /home/* /mnt/
+[root@lvm ~]# rm -rf /home/*
+[root@lvm ~]# umount /mnt
+[root@lvm ~]# mount /dev/VolGroup00/LogVol_Home /home/
+```
+
+Правим файл *fstab*
+
+```bash
+[root@lvm ~]# echo "`blkid | grep Home | awk '{print $2}'` /home xfs defaults 0 0" >> /etc/fstab
+```
+
+сгенерируем файлы в **/home**
+```bash
+[root@lvm ~]# touch /home/file{1..20}
+```
+проверяем
+
+```bash
+[root@lvm ~]# ls /home
+file1   file11  file13  file15  file17  file19  file20  file4  file6  file8  vagrant
+file10  file12  file14  file16  file18  file2   file3   file5  file7  file9
+```
+
+снимаем снапшот
+
+```bash
+[root@lvm ~]# lvcreate -L 100MB -s -n home_snap /dev/VolGroup00/LogVol_Home
+  Rounding up size to full physical extent 128.00 MiB
+  Logical volume "home_snap" created.
+```
+
+Удаляем часть файлов
+```bash
+[root@lvm ~]# rm -f /home/file{11..20}
+```
+
+проверяем
+```bash
+[root@lvm ~]# ls /home
+file1  file10  file2  file3  file4  file5  file6  file7  file8  file9  vagrant
+```
+
+восстанавливаем удаленные файлы из снашота
+
+```bash
+[root@lvm ~]# umount /home
+[root@lvm ~]# lvconvert --merge /dev/VolGroup00/home_snap
+  Merging of volume VolGroup00/home_snap started.
+  VolGroup00/LogVol_Home: Merged: 100.00%
+[root@lvm ~]# mount /home
+```
+
+проверяем что файлы восстановились
+
+```bash
+[root@lvm ~]# ls /home
+file1   file11  file13  file15  file17  file19  file20  file4  file6  file8  vagrant
+file10  file12  file14  file16  file18  file2   file3   file5  file7  file9
+```
