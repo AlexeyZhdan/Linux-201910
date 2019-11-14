@@ -95,7 +95,7 @@ Found initrd image: /boot/initramfs-3.10.0-862.2.3.el7.x86_64.img
 done
 ```
 
-Обновляем образ в *initrd*
+Обновляем образ в ***initrd***
 
 ```bash
 [root@lvm /]# cd /boot; for i in `ls initramfs-*img`; do dracut -v $i `echo $i|sed "s/initramfs-//g; s/.img//g"` --force
@@ -386,7 +386,7 @@ Creating journal (4096 blocks): done
 Writing superblocks and filesystem accounting information: done
 ```
 
-Монтируем зеркальный том в каталог **/mnt** и копируем на туда каталог **/var**
+Монтируем зеркальный том в каталог **/mnt** и копируем туда каталог **/var**
 
 ```bash
 [root@lvm boot]# mount /dev/vg_var/lv_var /mnt
@@ -495,7 +495,7 @@ realtime =none                   extsz=4096   blocks=0, rtextents=0
 [root@lvm ~]# mount /dev/VolGroup00/LogVol_Home /home/
 ```
 
-Правим файл *fstab*
+Правим файл ***fstab***
 
 ```bash
 [root@lvm ~]# echo "`blkid | grep Home | awk '{print $2}'` /home xfs defaults 0 0" >> /etc/fstab
