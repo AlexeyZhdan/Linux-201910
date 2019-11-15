@@ -246,21 +246,28 @@ Writing superblocks and filesystem accounting information: done
 
 ## Расширение LVM
 
-Создаем дополнительный **PV**
+Для расширения существующего **LVM** необходимо выполнить следующее:
+
+- Добавить один или несколько  **PV**;
+- Расширить существующую **VG** используя добавленные **PV**;
+- При необходимости растянуть существующий **LV** или создать новый;
+- Растянуть файловую систему на расширенный **LV** или создать файловую систему на новом разделе.
+
+Итак приступим. Создаем дополнительный **PV**
 
 ```bash
 [root@lvm ~]# pvcreate /dev/sdc
   Physical volume "/dev/sdc" successfully created.
 ```
 
-Расширяем VG добавляя в нее этот диск
+Расширяем **VG** добавляя в нее этот диск
 
 ```bash
 [root@lvm ~]# vgextend otus /dev/sdc
   Volume group "otus" successfully extended
 ```
 
-Убеждаемся что новый диск присутствует в VG otus
+Убеждаемся что новый диск присутствует в **VG otus**
 
 ```bash
 [root@lvm ~]# vgdisplay -v otus |grep 'PV Name'
@@ -296,7 +303,7 @@ Filesystem            Type  Size  Used Avail Use% Mounted on
 /dev/mapper/otus-test ext4  7.8G  7.8G     0 100% /data
 ```
 
-Увеличим LV за счет свободного места
+Увеличим **LV** за счет свободного места
 
 ```bash
 [root@lvm ~]# lvextend -l+80%FREE /dev/otus/test
@@ -304,7 +311,7 @@ Filesystem            Type  Size  Used Avail Use% Mounted on
   Logical volume otus/test successfully resized.
 ```
 
-проверим что LV расширился
+проверим что **LV** расширился
 
 ```bash
 [root@lvm ~]# lvs /dev/otus/test
@@ -320,7 +327,7 @@ Filesystem            Type  Size  Used Avail Use% Mounted on
 /dev/mapper/otus-test ext4  7.8G  7.8G     0 100% /data
 ```
 
-Произведем расширение файловой системы
+Как видно размер файловой системы остался прежним. Произведем расширение файловой системы
 
 ```bash
 [root@lvm ~]# resize2fs /dev/otus/test
@@ -334,7 +341,11 @@ Filesystem            Type  Size  Used Avail Use% Mounted on
 /dev/mapper/otus-test ext4   11G  7.8G  2.6G  76% /data
 ```
 
-Теперь уменьшим размер LV для этого сначала отмонтируем и проверим файловую систему
+## Уменьшение размера LVM
+
+Теперь уменьшим размер **LV** для этого сначала отмонтируем наш том от каталога командой ***umount /data/*** и проверим файловую систему командой ***e2fsck -fy /dev/otus/test*** здесь:
+- ***-fy*** - нужно уточнить
+- ***/dev/otus/test*** наш виртуфльный том
 
 ```bash
 [root@lvm ~]# umount /data/
@@ -348,6 +359,25 @@ Pass 5: Checking group summary information
 /dev/otus/test: 12/729088 files (0.0% non-contiguous), 2105907/2914304 blocks
 ```
 
+Для уменьшения размера **LVM** необходимо:
+
+- уменьшить размер файловой системы;
+- уменьшить размер логического тома;
+- смонтировать уменьшенный том.
+
+Для уменьшения файловой системы используется команда ***resize2fs /dev/otus/test 10G*** здесь:
+
+- ***/dev/otus/test*** - указание на логический том;
+- ***10G*** - требуемый размер тома (может быть указан в гигабайтах (**G**), мегабайтах (**М**) или килобайтах (**К**)).
+
+Для уменьшения размера логического тома (**LV**) используется команда ***lvreduce /dev/otus/test -L 10G*** здесь:
+
+- ***/dev/otus/test*** - указание на логический том;
+- ***-L*** - ключ указывающий что мы задаем размер в абсолютных величинах;
+- ***10G*** - размер логического тома (может быть указан в гигабайтах (**G**), мегабайтах (**М**) или килобайтах (**К**)).
+
+Пример:
+
 уменьшим размер файловой системы
 
 ```bash
@@ -357,7 +387,7 @@ Resizing the filesystem on /dev/otus/test to 2621440 (4k) blocks.
 The filesystem on /dev/otus/test is now 2621440 blocks long.
 ```
 
-теперь уменьшим размер LV
+теперь уменьшим размер **LV**
 
 ```bash
 [root@lvm ~]# lvreduce /dev/otus/test -L 10G
@@ -374,32 +404,53 @@ Do you really want to reduce otus/test? [y/n]: y
 [root@lvm ~]# mount /dev/otus/test /data/
 ```
 
-убеждаемся что LV и файловая система нужного размера
+убеждаемся что **LV** и файловая система нужного размера
 
 ```bash
 [root@lvm ~]# df -Th /data
 Filesystem            Type  Size  Used Avail Use% Mounted on
 /dev/mapper/otus-test ext4  9.8G  7.8G  1.6G  84% /data
+```
+
+либо
+
+```bash
 [root@lvm ~]# lvs /dev/otus/test
   LV   VG   Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
   test otus -wi-ao---- 10.00g
 ```
 
-## Делаем LVM снапшоты
+## Создание LVM снапшотов
 
-Для создания снапшота используется команда **lvcreate** с ключем **-s**
+Для создания снапшота используется команда **lvcreate** с ключем **-s**. Пример команды ***lvcreate -L 500M -s -n test-snap /dev/otus/test*** здесь:
+
+- ***-L*** - ключ указывающий что размер тома для снапшотов будет указан в абсолютных единицах;
+- ***500M*** - размер раздела под снапшоты в абсолютных величинах (может быть указан в гигабайтах (**G**), мегабайтах (**М**) или килобайтах (**К**));
+- ***-s*** - ключ указывающий на то что в этом разделе будут создаваться снапшоты;
+- ***-n*** - нужно уточнить;
+- ***test-snap*** - наименование раздела;
+- ***/dev/otus/test*** - указание на раздел снапшот которого следует сделать.
+
+Пример:
+
+### Создадим снапшот
 
 ```bash
 [root@lvm ~]# lvcreate -L 500M -s -n test-snap /dev/otus/test
   Logical volume "test-snap" created.
 ```
 
-проверим
+проверим что раздел успешно создан
 
 ```bash
 [root@lvm ~]# vgs -o +lv_size,lv_name | grep test
   otus         2   3   1 wz--n-  11.99g <1.41g  10.00g test
   otus         2   3   1 wz--n-  11.99g <1.41g 500.00m test-snap
+```
+
+или
+
+```bash
 [root@lvm ~]# lsblk
   NAME                    MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
   sda                       8:0    0   40G  0 disk
@@ -423,11 +474,23 @@ Filesystem            Type  Size  Used Avail Use% Mounted on
   sde                       8:64   0    1G  0 disk
 ```
 
-Смонтируем том для снапшотов
+### Смонтируем том со снапшотом
+
+Создаем каталог для монтирования раздела под снапшоты
 
 ```bash
 [root@lvm ~]# mkdir /data-snap
+```
+
+Монтируем в созданный каталог том содержащий снапшот
+
+```bash
 [root@lvm ~]# mount /dev/otus/test-snap /data-snap/
+```
+
+Проверим содержимое тома
+
+```bash
 [root@lvm ~]# ll /data-snap/
 total 8068564
 drwx------. 2 root root      16384 Nov 13 11:17 lost+found
@@ -440,22 +503,48 @@ drwx------. 2 root root      16384 Nov 13 11:17 lost+found
 [root@lvm ~]# umount /data-snap/
 ```
 
+### Восстановление со снапшота
+
+Для восстановления со снапшота используется команда ***lvconvert --merge /dev/otus/test-snap*** здесь:
+
+- ***--merge*** ключ показывающий что производится слияние информации об изменившихся блоках из снапшото с реальным разделом;
+- ***/dev/otus/test-snap*** указывает раздел с сохраненным снапшотом
+
+Пример
+
 Удаляем созданный ранее файл
+
+Переходим в каталог **/data**
 
 ```bash
 [root@lvm ~]# cd /data
+```
+
+просматриваем содержимое каталога
+
+```bash
 [root@lvm data]# ll
 total 8068564
 drwx------. 2 root root      16384 Nov 13 11:17 lost+found
 -rw-r--r--. 1 root root 8262189056 Nov 13 12:06 test.log
+```
+
+Удаляем файл **test.log**
+
+```bash
 [root@lvm data]# rm test.log
 rm: remove regular file ‘test.log’? y
+```
+
+Проверяем что файл из каталога удален
+
+```bash
 [root@lvm data]# ll
 total 16
 drwx------. 2 root root 16384 Nov 13 11:17 lost+found
 ```
 
-отмонтируем том и воссановим данные из снапшота
+Отмонтируем том с которого был удален файл и воссановим данные из снапшота.
 
 ```bash
 [root@lvm /]# umount /data
@@ -474,18 +563,41 @@ drwx------. 2 root root      16384 Nov 13 11:17 lost+found
 -rw-r--r--. 1 root root 8262189056 Nov 13 12:06 test.log
 ```
 
-## Зеркало LVM
+## Зеркальный LVM раздел
 
-Создадим том для зеркалирования LVM
+Создание зеркального раздела LVM выполняется аналогично созданию обычного раздела. Для этого:
+
+- добавляем физические диски (**PV**);
+- создаем группу (**VG**);
+- создаем логический раздел (**LV**) с использованием ключа (**-m**) указывающего что это должен быть зеркальный раздел.
+
+Пример:
+
+Создаем **PV** для дисков ***/dev/sdd*** и ***/dev/sde***
 
 ```bash
 [root@lvm /]# pvcreate /dev/sd{d,e}
   Physical volume "/dev/sdd" successfully created.
   Physical volume "/dev/sde" successfully created.
+```
+
+Создаем группу **VG** включая в нее диски ранее созданных **PV**
+
+```bash
 [root@lvm /]# vgcreate vg0 /dev/sd{d,e}
   Volume group "vg0" successfully created
+```
+
+создаем заркальный логический раздел **LV**
+
+```bash
 [root@lvm /]# lvcreate -l+80%FREE -m1 -n mirror vg0
   Logical volume "mirror" created.
+```
+
+Проверяем
+
+```bash
 [root@lvm /]# lvs
   LV       VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
   LogVol00 VolGroup00 -wi-ao---- <37.47g
