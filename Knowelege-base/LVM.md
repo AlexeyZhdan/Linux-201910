@@ -95,7 +95,9 @@ sde                       8:64   0    1G  0 disk
   Logical volume "test" created.
 ```
 
-Проверяем
+Информацию о **VG** можно получить используя команду ***vgdisplay otus*** здесь:
+
+- ***otus*** - наименование **VG** использованное при создании
 
 ```bash
 [root@lvm ~]# vgdisplay otus
@@ -121,14 +123,17 @@ sde                       8:64   0    1G  0 disk
   VG UUID               mv0GKp-r8U8-sPwa-Aws8-msnJ-6qW9-Wl1YJt
 ```
 
-Просмотр информации о дисках VG
+Просмотр информации о дисках принадлежащих **VG** можно осуществить выполнив команду  ***vgdisplay -v otus | grep 'PV Name'***
 
 ```bash
 [root@lvm ~]# vgdisplay -v otus | grep 'PV Name'
   PV Name               /dev/sdb
 ```
 
-Детальная информация о LV
+Детальную информацию о **LV** можно получить используя команду ***lvdisplay /dev/otus/test*** здесь:
+
+- ***/otus*** - имя **VG** к которой принадлежит данный **LV**
+- ***/test*** - имя **LV** присвоенное ему при создании
 
 ```bash
 [root@lvm ~]# lvdisplay /dev/otus/test
@@ -150,7 +155,7 @@ sde                       8:64   0    1G  0 disk
   Block device           253:2
 ```
 
-Для получения информации в сжатом виде применяют команды ***vgs*** и ***lvs***
+Для получения информации о существующих **VG** и **LV** в сжатом виде применяют команды ***vgs*** и ***lvs***
 
 ```bash
 [root@lvm ~]# vgs
@@ -164,14 +169,14 @@ sde                       8:64   0    1G  0 disk
   test     otus       -wi-a-----  <8.00g
 ```
 
-Создаем еще один LV из свободного места на диске используя абсолютное значение в МБ
+Создаем еще один **LV** из свободного места на диске используя абсолютное значение в **МБ**
 
 ```bash
 [root@lvm ~]# lvcreate -L100M -n small otus
   Logical volume "small" created.
 ```
 
-проверяем
+проверяем командой **lvs**
 
 ```bash
 [root@lvm ~]# lvs
@@ -182,7 +187,19 @@ sde                       8:64   0    1G  0 disk
   test     otus       -wi-a-----  <8.00g
 ```
 
-Создаем на LV файловую систему и монтируем ее:
+Для создания на LV файловой системы используется команда ***mkfs.ext4 /dev/otus/test*** здесь:
+
+- ***.ext4*** - указывает тип файловой системы;
+- ***/dev/otus/test*** - указывает на каком томе **LV** создается файловая система.
+
+Для монтажа тома в конкретный каталог **Linux** используется следующая команда ***mount /dev/otus/test /data/*** здесь:
+
+- ***/dev/otus/test*** - указывает на том **LV**;
+- ***/data/*** - каталог к которому следует подмонтировать том.
+
+Примеры:
+
+Создаем на томе файловую систему
 
 ```bash
 [root@lvm ~]# mkfs.ext4 /dev/otus/test
@@ -206,16 +223,30 @@ Allocating group tables: done
 Writing inode tables: done
 Creating journal (32768 blocks): done
 Writing superblocks and filesystem accounting information: done
+```
 
+Создаем каталог для монтирования тома
+
+```bash
 [root@lvm ~]# mkdir /data
+```
+
+монтируем том в созданный каталог
+
+```bash
 [root@lvm ~]# mount /dev/otus/test /data/
+```
+
+проверяем смонтированный том
+
+```bash
 [root@lvm ~]# mount | grep /data
 /dev/mapper/otus-test on /data type ext4 (rw,relatime,seclabel,data=ordered)
 ```
 
 ## Расширение LVM
 
-Создаем дополнительный PV
+Создаем дополнительный **PV**
 
 ```bash
 [root@lvm ~]# pvcreate /dev/sdc
