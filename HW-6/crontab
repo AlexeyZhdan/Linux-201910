@@ -1,0 +1,5 @@
+SHELL=/bin/sh
+MAILTO=alex@example.org
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/home/alex/bin
+
+*/30 * * * *
