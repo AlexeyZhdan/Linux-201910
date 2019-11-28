@@ -1,6 +1,6 @@
 #!/bin/bash
 
-yum install -y redhat-lsb-core wget rpmdevtools rpm-build createrepo yum-utils gcc
+#yum install -y redhat-lsb-core wget rpmdevtools rpm-build createrepo yum-utils gcc
 wget https://nginx.org/packages/centos/7/SRPMS/nginx-1.16.1-1.el7.ngx.src.rpm
 rpm -i nginx-1.16.1-1.el7.ngx.src.rpm
 wget https://www.openssl.org/source/latest.tar.gz
