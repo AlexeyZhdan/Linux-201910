@@ -10,3 +10,4 @@ cp -f /files/nginx.spec /root/rpmbuild/SPECS/
 rpmbuild -bb rpmbuild/SPECS/nginx.spec
 yum localinstall -y rpmbuild/RPMS/x86_64/nginx-1.16.1-1.el7.ngx.x86_64.rpm
 systemctl start nginx
+systemctl enable nginx
