@@ -7,8 +7,8 @@
 [root@bash ~]# yum install -y redhat-lsb-core wget rpmdevtools rpm-build createrepo yum-utils
 ```
 
-Возьмем пакет NGINX и включим в негоподдержку openssl
-Загружаем исходники **(SRPM)** пакета **NGINX** для его модификации для этого используем команду:
+Возьмем пакет **NGINX** и включим в негоподдержку **openssl**
+Загружаем исходники **(SRPM)** пакета **NGINX** для его последующей модификации. Для этого используем команду:
 
  ```bash
  [root@bash ~]# wget https://nginx.org/packages/centos/7/SRPMS/nginx-1.16.1-1.el7.ngx.src.rpm
