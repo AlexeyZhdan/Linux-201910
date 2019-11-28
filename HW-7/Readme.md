@@ -24,7 +24,7 @@ total 1044
 -rw-------. 1 root root    5300 Jun  1 17:18 original-ks.cfg
 ```
 
-Устанавливаемзагруженный пакет командой:
+Устанавливаем загруженный пакет командой:
 
 ```bash
 [root@bash ~]# rpm -i nginx-1.16.1-1.el7.ngx.src.rpm
