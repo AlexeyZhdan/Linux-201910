@@ -120,6 +120,12 @@ Nov 27 14:44:34 bash systemd[1]: PID file /var/run/nginx.pid not readable (yet?)
 Nov 27 14:44:34 bash systemd[1]: Started nginx - high performance web server.
 ```
 
+Настраиваем автозапукс **NGINX**
+
+```bash
+[root@bash ~]# systemctl enable nginx
+```
+
 ## Создать свой репозиторий и разместить в нем созданный RPM пакет
 
 Создаем каталог для размещения репозитория. Создаем каталог **repo** в каталоге для статики **NGINX** по умолчанию ***/usr/shsre/nginx/html***
