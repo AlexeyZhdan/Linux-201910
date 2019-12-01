@@ -12,4 +12,4 @@ cat >> /etc/yum.repos.d/myrepo.repo <<EOF
  baseurl=http://localhost/repo
  gpgcheck=0
  enabled=1
- EOF
+EOF
