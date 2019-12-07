@@ -1,0 +1,2 @@
+[web]
+web ansible_host=192.168.11.151 ansible_port=22 ansible_private_key_file=/home/vagrant/.ssh/id_rsa
