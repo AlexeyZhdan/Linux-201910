@@ -138,7 +138,7 @@ web | SUCCESS => {
         "ActiveState": "inactive",
 ```
 
-Проверим наличие репозитория **epel-reliase** и если его нет,то произведем его установку:
+Проверим наличие репозитория **epel-release** и если его нет,то произведем его установку:
 
 ```bash
 [root@ansible Ansible]# ansible web -m yum -a "name=epel-release state=present" -b
