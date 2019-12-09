@@ -57,11 +57,20 @@ Vagrant.configure("2") do |config|
           mkdir ~/ansible/staging
           mkdir ~/ansible/provision
           mkdir ~/ansible/provision/templates
+          mkdir ~/ansible/roles
+          mkdir ~/ansible/roles/deploy_nginx
+          mkdir ~/ansible/roles/deploy_nginx/vars
+          mkdir ~/ansible/roles/deploy_nginx/tasks
+          mkdir ~/ansible/roles/deploy_nginx/handlers
           cp /vagrant/ansible/ansible.cfg /root/ansible/
           cp /vagrant/ansible/epel.yml /root/ansible/provision/
           cp /vagrant/ansible/nginx.yml /root/ansible/provision/
           cp /vagrant/ansible/nginx.conf.j2 /root/ansible/provision/templates/
           cp /vagrant/ansible/hosts /root/ansible/staging/
+          cp /vagrant/roles/tasks.main.yml /root/ansible/roles/deploy_nginx/tasks/main.yml
+          cp /vagrant/roles/vars.main.yml /root/ansible/roles/deploy_nginx/vars/main.yml
+          cp /vagrant/roles/handlers.main.yml /root/ansible/roles/deploy_nginx/handlers/main.yml
+          cp /vagrant/roles/role_nginx.yml /root/ansible/
           SHELL
       when "web"
         box.vm.provision "shell", run: "always", inline: <<-SHELL
