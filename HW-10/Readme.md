@@ -405,3 +405,110 @@ web                        : ok=6    changed=5    unreachable=0    failed=0    s
         margin: 0 4% 0 4%;
         }
 ```
+
+### Создание роли
+
+Для преобразования нашего плэйбука в роль необходимо в каталоге **/Ansible** сщздать каталог **roles**. Перейти в созданный каталог **roles** и запустить команду ***ansible-galaxy init deploy_nginx***. Запуск этой команды создаст нам всю необходимую структуру для использования роли **deploy_nginx**.
+Далее копируем файл шаблона *nginx.conf.j2* в каталог **/templates** роли **deploy_nginx**
+
+```bash
+[root@ansible deploy_nginx]# cp /root/ansible/provision/templates/nginx.conf.j2 ./templates/
+```
+
+Секцию **- tasks:** нашего предыдущего плейбука копируем в файл **./roles/deploy_nginx/tasks/main.yml**
+
+```bash
+---
+# tasks file for deploy_nginx
+
+- name: NGINX | Install EPEL Repo package from standart repo
+  yum:
+    name: epel-release
+    state: present
+  tags:
+    - epel-package
+    - packages
+
+- name: NGINX | Install NGINX package from EPEL Repo
+  yum:
+    name: nginx
+    state: latest
+  notify:
+    - restart nginx
+  tags:
+    - nginx-package
+    - packages
+
+- name: NGINX | Create NGINX config file from template
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify:
+    - reload nginx
+  tags:
+    - nginx-configuration
+```
+
+Секцию **- handlers:** нашего предыдущего плэйбука копируем в файл **./roles/deploy_nginx/handlers/main.yml**
+
+```bash
+---
+# handlers file for deploy_nginx
+
+- name: restart nginx
+  systemd:
+    name: nginx
+    state: restarted
+    enabled: yes
+
+- name: reload nginx
+  systemd:
+    name: nginx
+    state: reloaded
+```
+
+Секцию **vars:** нашего предыдущего плэйбука копируем в файл **./roles/deploy_nginx/vars/main.yml**
+
+```bash
+---
+# vars file for deploy_nginx
+
+nginx_listen_port: 8080
+```
+копируем файл плэйбука в файл **~/ansible/role_nginx** и затем редактируем его удаляя из него секции **vars:**, **-tasts:** и **- hendlers**, после чего добавляем в него секцию **- roles:**
+
+```bash
+---
+- name: NGINX | Install and configure NGINX
+  hosts: web
+  become: true
+
+  roles:
+    - deploy_nginx
+...
+```
+
+Запускаем новый плэйбук 
+
+```bash
+[root@ansible ansible]# ansible-playbook provision/role_nginx.yml
+[WARNING]: Found both group and host with same name: web
+
+
+PLAY [NGINX | Install and configure NGINX] *****************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************
+ok: [web]
+
+TASK [deploy_nginx : NGINX | Install EPEL Repo package from standart repo] *********************************************
+ok: [web]
+
+TASK [deploy_nginx : NGINX | Install NGINX package from EPEL Repo] *****************************************************
+ok: [web]
+
+TASK [deploy_nginx : NGINX | Create NGINX config file from template] ***************************************************
+ok: [web]
+
+PLAY RECAP *************************************************************************************************************
+web                        : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
