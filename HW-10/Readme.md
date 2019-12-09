@@ -358,7 +358,7 @@ http {
 Запускаем получившийся плейбук:
 
 ```bash
-[root@ansible Ansible]# ansible-playbook ./provision/nginx.yml
+[root@ansible ansible]# ansible-playbook provision/nginx.yml
 [WARNING]: Found both group and host with same name: web
 
 
@@ -368,16 +368,22 @@ TASK [Gathering Facts] *********************************************************
 ok: [web]
 
 TASK [NGINX | Install EPEL Repo package from standart repo] ************************************************************
-ok: [web]
+changed: [web]
 
 TASK [NGINX | Install NGINX package from EPEL Repo] ********************************************************************
-ok: [web]
+changed: [web]
 
 TASK [NGINX | Create NGINX config file from template] ******************************************************************
-ok: [web]
+changed: [web]
+
+RUNNING HANDLER [restart nginx] ****************************************************************************************
+changed: [web]
+
+RUNNING HANDLER [reload nginx] *****************************************************************************************
+changed: [web]
 
 PLAY RECAP *************************************************************************************************************
-web                        : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+web                        : ok=6    changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```
 
 Проверяем что у нас есть доступ к веб серверу по порту 8080
